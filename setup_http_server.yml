@@ -1,0 +1,50 @@
+---
+- name: Fully Automate HTTP Server Setup with Unique Website
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Install Apache HTTP server
+      ansible.builtin.yum:
+        name: httpd
+        state: present
+
+    - name: Ensure Apache service is started and enabled
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Generate a unique timestamp
+      ansible.builtin.command: date '+%Y-%m-%d %H:%M:%S'
+      register: current_time
+
+    - name: Create the website directory
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Deploy a unique HTML file directly from playbook
+      ansible.builtin.copy:
+        content: |
+          <html>
+          <head>
+            <title>Automated Website</title>
+          </head>
+          <body>
+            <h1>Welcome to Server at {{ current_time.stdout }}</h1>
+            <p>This page was generated automatically at {{ current_time.stdout }} using Ansible.</p>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+    - name: Open HTTP port in the firewall
+      ansible.builtin.firewalld:
+        service: http
+        state: enabled
+        permanent: yes
+
+    - name: Print success message
+      ansible.builtin.debug:
+        msg: "The HTTP server is set up and running. Access the website via the server's public IP."
