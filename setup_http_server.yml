@@ -3,14 +3,18 @@
   hosts: localhost
   become: yes
   tasks:
+    - name: Update apt package manager cache
+      ansible.builtin.apt:
+        update_cache: yes
+
     - name: Install Apache HTTP server
-      ansible.builtin.yum:
-        name: httpd
+      ansible.builtin.apt:
+        name: apache2
         state: present
 
     - name: Ensure Apache service is started and enabled
       ansible.builtin.service:
-        name: httpd
+        name: apache2
         state: started
         enabled: yes
 
@@ -39,11 +43,15 @@
         dest: /var/www/html/index.html
         mode: '0644'
 
-    - name: Open HTTP port in the firewall
-      ansible.builtin.firewalld:
-        service: http
-        state: enabled
-        permanent: yes
+    - name: Allow HTTP traffic in the UFW firewall
+      ansible.builtin.ufw:
+        rule: allow
+        port: 80
+        proto: tcp
+
+    - name: Enable UFW firewall
+      ansible.builtin.command: ufw enable
+      when: ansible_distribution == "Ubuntu"
 
     - name: Print success message
       ansible.builtin.debug:
